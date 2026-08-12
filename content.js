@@ -11,60 +11,75 @@ window.WebFontConfig = {
 // Non-greedy, does not span newlines, requires non-empty content.
 var MATH_REGEX = /\$([^$\n]+?)\$/g;
 
-function renderMathInTextNode(textNode) {
-    var text = textNode.nodeValue;
-    MATH_REGEX.lastIndex = 0;
-    if (!MATH_REGEX.test(text)) return;
-    MATH_REGEX.lastIndex = 0;
+var SELECTORS = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, figcaption';
 
-    var frag = document.createDocumentFragment();
-    var lastIndex = 0;
-    var match;
-
-    while ((match = MATH_REGEX.exec(text)) !== null) {
-        // preserve any plain text before this match, untouched
-        if (match.index > lastIndex) {
-            frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+// Finds which text node + offset a given "flattened" character offset falls in.
+function locate(nodeInfos, globalOffset) {
+    for (var i = 0; i < nodeInfos.length; i++) {
+        var info = nodeInfos[i];
+        var len = info.node.nodeValue.length;
+        if (globalOffset <= info.start + len) {
+            return { node: info.node, offset: globalOffset - info.start };
         }
+    }
+    var last = nodeInfos[nodeInfos.length - 1];
+    return { node: last.node, offset: last.node.nodeValue.length };
+}
+
+function processElement(el) {
+    if (el.classList && (el.classList.contains('andromeda-katex') || el.classList.contains('katex'))) {
+        return;
+    }
+
+    // Collect every text node inside this element, in document order, skipping
+    // anything already inside a rendered KaTeX span (so we never re-process output).
+    var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+        acceptNode: function (node) {
+            var parent = node.parentElement;
+            if (parent && parent.closest('.andromeda-katex, .katex')) {
+                return NodeFilter.FILTER_REJECT;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+
+    var nodeInfos = [];
+    var combined = '';
+    var node;
+    while ((node = walker.nextNode())) {
+        nodeInfos.push({ node: node, start: combined.length });
+        combined += node.nodeValue;
+    }
+    if (nodeInfos.length === 0 || combined.indexOf('$') === -1) return;
+
+    MATH_REGEX.lastIndex = 0;
+    var matches = [];
+    var m;
+    while ((m = MATH_REGEX.exec(combined)) !== null) {
+        matches.push({ start: m.index, end: MATH_REGEX.lastIndex, expr: m[1] });
+    }
+    if (matches.length === 0) return;
+
+    // Replace matches back-to-front so earlier offsets stay valid as we edit the DOM.
+    for (var i = matches.length - 1; i >= 0; i--) {
+        var match = matches[i];
+        var startInfo = locate(nodeInfos, match.start);
+        var endInfo = locate(nodeInfos, match.end);
+
+        var range = document.createRange();
+        range.setStart(startInfo.node, startInfo.offset);
+        range.setEnd(endInfo.node, endInfo.offset);
+        range.deleteContents();
 
         var span = document.createElement('span');
         span.className = 'andromeda-katex';
         try {
-            span.innerHTML = katex.renderToString(match[1], { throwOnError: false });
+            span.innerHTML = katex.renderToString(match.expr, { throwOnError: false });
         } catch (e) {
-            // fall back to the original raw text if rendering fails
-            span.textContent = match[0];
+            span.textContent = '$' + match.expr + '$';
         }
-        frag.appendChild(span);
-
-        lastIndex = MATH_REGEX.lastIndex;
+        range.insertNode(span);
     }
-
-    // preserve any trailing plain text after the last match, untouched
-    if (lastIndex < text.length) {
-        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
-    }
-
-    textNode.parentNode.replaceChild(frag, textNode);
 }
 
-function walk(node) {
-    if (node.nodeType === Node.TEXT_NODE) {
-        renderMathInTextNode(node);
-        return;
-    }
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-    // don't re-walk into already-rendered KaTeX output
-    if (node.classList && node.classList.contains('andromeda-katex')) return;
-    if (node.classList && node.classList.contains('katex')) return;
-
-    // snapshot childNodes first since replaceChild mutates the live list mid-iteration
-    Array.from(node.childNodes).forEach(walk);
-}
-
-var SELECTORS = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, figcaption';
-
-document.querySelectorAll(SELECTORS).forEach(function (el) {
-    walk(el);
-});
+document.querySelectorAll(SELECTORS).forEach(processElement);

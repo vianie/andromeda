@@ -24,7 +24,7 @@ Chrome no longer allows installing this kind of extension from the Chrome Web St
 - If a post's math looks broken or doesn't render, try refreshing the page.
 - If Chrome shows an error while loading, make sure Developer mode is on and that you selected the correct folder (the one with `manifest.json` inside it, not a folder containing that folder).
 
-### What's different from the original
+## What's different from the original
 
 - **Manifest V3.** The original used Manifest V2, which Chrome has since discontinued and will no longer install, even as an unpacked/developer-mode extension. `manifest_version` was bumped to `3` and `browser_action` was renamed to `action` (the MV3 equivalent). No other permissions or behavior changed here.
 

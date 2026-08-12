@@ -1,10 +1,10 @@
 # andromeda
 Chrome extension that renders LaTeX in Substack articles.
-Fork of [rish-16/andromeda](https://github.com/rish-16/andromeda), patched for MV3.
+Fork of [rish-16/andromeda](https://github.com/rish-16/andromeda) with my personal updates detailed below. 
 
-For those of you that are here from my Substack:
+##For those of you that are here from my Substack:
 
-## How to install
+### How to install
 
 Chrome no longer allows installing this kind of extension from the Chrome Web Store directly, so you'll need to load it manually. It takes about 2 minutes and only needs to be done once.
 
@@ -18,13 +18,13 @@ Chrome no longer allows installing this kind of extension from the Chrome Web St
 
 5. **Done!** The extension is now installed. Open any Substack post with LaTeX and it should render automatically.
 
-## Notes
+### Notes
 
 - This only affects **your own browser** — it doesn't change how the post looks for other readers unless they also install it.
 - If a post's math looks broken or doesn't render, try refreshing the page.
 - If Chrome shows an error while loading, make sure Developer mode is on and that you selected the correct folder (the one with `manifest.json` inside it, not a folder containing that folder).
 
-## What's different from the original
+### What's different from the original
 
 - **Manifest V3.** The original used Manifest V2, which Chrome has since discontinued and will no longer install, even as an unpacked/developer-mode extension. `manifest_version` was bumped to `3` and `browser_action` was renamed to `action` (the MV3 equivalent). No other permissions or behavior changed here.
 

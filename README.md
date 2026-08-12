@@ -2,7 +2,7 @@
 Chrome extension that renders LaTeX in Substack articles.
 Fork of [rish-16/andromeda](https://github.com/rish-16/andromeda) with my personal updates detailed below. 
 
-##For those of you that are here from my Substack:
+## For those of you that are here from my Substack:
 
 ### How to install
 

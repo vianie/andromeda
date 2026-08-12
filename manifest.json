@@ -2,14 +2,14 @@
     "name": "Andromeda",
     "description": "Enabling LaTeX support for Substack articles",
     "version": "1.0",
-    "manifest_version": 2,
+    "manifest_version": 3,
     "background": {
         "service_worker": "background.js"
     },
     "permissions": [
         "activeTab"
     ],
-    "browser_action": {
+    "action": {
         "default_popup": "popup.html"
     },
     "content_scripts":[

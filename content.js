@@ -7,48 +7,64 @@ window.WebFontConfig = {
     },
 };
 
-function parseLaTeX(text) {
-    var splitText = text.split("$$")
-    var indices = []
+// Matches single-dollar delimited LaTeX, e.g. $x^2 + y^2$
+// Non-greedy, does not span newlines, requires non-empty content.
+var MATH_REGEX = /\$([^$\n]+?)\$/g;
 
-    if (splitText.length == 1) {
-        return text
-    }
+function renderMathInTextNode(textNode) {
+    var text = textNode.nodeValue;
+    MATH_REGEX.lastIndex = 0;
+    if (!MATH_REGEX.test(text)) return;
+    MATH_REGEX.lastIndex = 0;
 
-    for (var i = 0; i < splitText.length; i++) {
-        if (i % 2 != 0) {
-            indices.push(i)
+    var frag = document.createDocumentFragment();
+    var lastIndex = 0;
+    var match;
+
+    while ((match = MATH_REGEX.exec(text)) !== null) {
+        // preserve any plain text before this match, untouched
+        if (match.index > lastIndex) {
+            frag.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
         }
-    }
 
-    // var regExp = /\$\$(.*?)\$\$/gmiu
-    var regExp = /(?<=\$\$).+?(?=\$\$)/gmiu
-    var matches = text.match(regExp)
-    var renders = []
-    for (var i = 0; i < matches.length; i++) {
-        if (i % 2 == 0) {
-            var part = matches[i]
-            var rendered = katex.renderToString(part, {
-                throwOnError: false
-            })
-            renders.push(rendered)
+        var span = document.createElement('span');
+        span.className = 'andromeda-katex';
+        try {
+            span.innerHTML = katex.renderToString(match[1], { throwOnError: false });
+        } catch (e) {
+            // fall back to the original raw text if rendering fails
+            span.textContent = match[0];
         }
+        frag.appendChild(span);
+
+        lastIndex = MATH_REGEX.lastIndex;
     }
 
-    for (var i = 0; i < indices.length; i++) {
-        var idx = indices[i]
-        splitText[idx] = renders[i]
+    // preserve any trailing plain text after the last match, untouched
+    if (lastIndex < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex)));
     }
 
-    var finalRender = splitText.join(" ")
-
-    return finalRender
+    textNode.parentNode.replaceChild(frag, textNode);
 }
 
-function processText(element) {
-    var originalText = element.innerText
-    var render = parseLaTeX(originalText)
-    element.innerHTML = render
+function walk(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        renderMathInTextNode(node);
+        return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    // don't re-walk into already-rendered KaTeX output
+    if (node.classList && node.classList.contains('andromeda-katex')) return;
+    if (node.classList && node.classList.contains('katex')) return;
+
+    // snapshot childNodes first since replaceChild mutates the live list mid-iteration
+    Array.from(node.childNodes).forEach(walk);
 }
 
-document.querySelectorAll('p').forEach(e => processText(e));
+var SELECTORS = 'p, h1, h2, h3, h4, h5, h6, li, blockquote, figcaption';
+
+document.querySelectorAll(SELECTORS).forEach(function (el) {
+    walk(el);
+});

@@ -28,7 +28,7 @@ Chrome no longer allows installing this kind of extension from the Chrome Web St
 
 - **Manifest V3.** The original used Manifest V2, which Chrome has since discontinued and will no longer install, even as an unpacked/developer-mode extension. `manifest_version` was bumped to `3` and `browser_action` was renamed to `action` (the MV3 equivalent). No other permissions or behavior changed here.
 
-- **Single-`$` delimiters instead of `$$`.** The original only rendered LaTeX wrapped in double dollar signs (`$$...$$`). This fork switches to single dollar signs (`$...$`), matching how most people are used to writing inline math. Note this does mean literal dollar amounts in your text (like "$5 and $10") can occasionally get misread as a math delimiter pair — see "Writing math in your posts" above.
+- **Single-`$` delimiters instead of `$$`.** The original only rendered LaTeX wrapped in double dollar signs (`$$...$$`). This fork switches to single dollar signs (`$...$`), matching how most people are used to writing inline math. Note this does mean literal dollar amounts in your text (like "$5 and $10") can occasionally get misread as a math delimiter pair.
 
 - **Renders in more places.** The original only scanned `<p>` (paragraph) elements. This fork also scans headings, list items, blockquotes, and image captions, so math works anywhere in a post, not just body paragraphs.
 
